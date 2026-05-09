@@ -12,8 +12,9 @@ dist
 dist-ssr
 *.local
 
-# Lockfiles (Bun)
+# Lockfiles
 bun.lockb
+package-lock.json
 
 # Editor directories and files
 .vscode/*
