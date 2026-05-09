@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Lockfiles
+# Lockfiles - npm and bun
 bun.lockb
 package-lock.json
 
