@@ -89,7 +89,8 @@ export default function PowerpointToPdf() {
       ctaLabel="Convert to PDF"
       helper={
         <p className="text-xs text-muted-foreground">
-          Note: text content from each slide is converted to a clean PDF page. For pixel-perfect rendering with images and animations, export to PDF directly from PowerPoint.
+          Extracts text content from each slide into a clean PDF page. Images, visual layouts, charts, and animations are not preserved.
+          For full fidelity with images and design, export to PDF directly from PowerPoint.
         </p>
       }
     />
