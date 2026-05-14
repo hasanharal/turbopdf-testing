@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle } from "lucide-react";
 
 const tool = getTool("html-to-pdf");
 
@@ -90,7 +91,13 @@ export default function HtmlToPdf() {
       <TabsContent value="url" className="space-y-2 mt-4">
         <Label>Page URL</Label>
         <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/article" type="url" />
-        <p className="text-xs text-muted-foreground">Some sites block cross-origin fetching. If a URL fails, copy the page HTML instead.</p>
+        <div className="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2 flex gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            ⚠️ URL mode only works for simple, public, CORS-friendly pages. Most modern websites will fail.
+            Use "Paste HTML" tab for reliable conversion.
+          </span>
+        </div>
       </TabsContent>
     </Tabs>
   );
