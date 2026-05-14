@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ToolPageLayout } from "@/components/ToolPageLayout";
 import { getTool } from "@/lib/tools";
 import { downloadBlob, validatePdf } from "@/lib/file-utils";
 import { PDFDocument } from "pdf-lib";
+import { pdfjsLib } from "@/lib/pdf-worker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Info } from "lucide-react";
@@ -11,9 +12,34 @@ const tool = getTool("unlock-pdf");
 
 export default function UnlockPdf() {
   const [password, setPassword] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!files[0]) { setPreview(null); return; }
+    (async () => {
+      try {
+        const data = new Uint8Array(await files[0].arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        const page = await pdf.getPage(1);
+        const vp = page.getViewport({ scale: 1.2 });
+        const c = document.createElement("canvas");
+        c.width = vp.width; c.height = vp.height;
+        const ctx = c.getContext("2d")!;
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        await page.render({ canvasContext: ctx, viewport: vp, canvas: c } as any).promise;
+        if (!cancelled) setPreview(c.toDataURL("image/jpeg", 0.8));
+      } catch {
+        // Preview generation failed, that's ok
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [files]);
 
   const process = async (files: File[]) => {
     const file = files[0];
+    if (!file) throw new Error("Please upload a PDF.");
     await validatePdf(file);
     const bytes = new Uint8Array(await file.arrayBuffer());
     let doc: PDFDocument;
@@ -22,21 +48,18 @@ export default function UnlockPdf() {
     } catch (e: any) {
       throw new Error("Could not open this PDF. If it uses strong encryption, try entering the password.");
     }
-    if ((doc as any).isEncrypted) {
-      // pdf-lib doesn't natively decrypt; rewrite via re-save when possible
-      try {
-        const out = await PDFDocument.create();
-        const pages = await out.copyPages(doc, doc.getPageIndices());
-        pages.forEach((p) => out.addPage(p));
-        const data = await out.save();
-        downloadBlob(data, file.name.replace(/\.pdf$/i, "") + "-unlocked.pdf");
-        return;
-      } catch {
-        throw new Error("This PDF uses encryption that can't be removed in the browser.");
-      }
+    
+    // If the PDF is encrypted, we need to copy pages to create an unencrypted copy
+    // using pdf-lib's native page copying (preserves text layer)
+    try {
+      const out = await PDFDocument.create();
+      const pages = await out.copyPages(doc, doc.getPageIndices());
+      pages.forEach((p) => out.addPage(p));
+      const data = await out.save();
+      downloadBlob(data, file.name.replace(/\.pdf$/i, "") + "-unlocked.pdf");
+    } catch {
+      throw new Error("This PDF uses encryption that can't be removed in the browser. Try a desktop tool like Adobe Acrobat.");
     }
-    const data = await doc.save();
-    downloadBlob(data, file.name.replace(/\.pdf$/i, "") + "-unlocked.pdf");
   };
 
   const options = () => (
@@ -53,5 +76,12 @@ export default function UnlockPdf() {
     </div>
   );
 
-  return <ToolPageLayout tool={tool} process={process} options={options} helper={helper} />;
+  const customBody = preview ? (
+    <div className="rounded-2xl border border-border bg-secondary/40 p-4">
+      <p className="text-sm font-medium mb-3">Preview (page 1)</p>
+      <img src={preview} alt="Page preview" className="max-w-full max-h-[400px] rounded-md border border-border" />
+    </div>
+  ) : null;
+
+  return <ToolPageLayout tool={tool} process={process} options={options} helper={helper} customBody={customBody} hideDefaultDropzone />;
 }
