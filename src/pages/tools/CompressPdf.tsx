@@ -6,6 +6,7 @@ import { PDFDocument } from "pdf-lib";
 import { pdfjsLib } from "@/lib/pdf-worker";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { AlertCircle } from "lucide-react";
 
 const tool = getTool("compress-pdf");
 
@@ -81,6 +82,13 @@ export default function CompressPdf() {
 
   const options = () => (
     <div>
+      <div className="mb-4 p-3 rounded-lg border border-destructive/40 bg-destructive/10 text-destructive text-xs flex gap-2">
+        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <span>
+          <strong>Important:</strong> This tool rasterizes pages to images. Text in the output PDF will NOT be
+          selectable, copyable, or searchable. If you need text-preserving compression, use a desktop tool.
+        </span>
+      </div>
       <Label className="text-sm font-semibold mb-3 block">Compression level</Label>
       <RadioGroup value={level} onValueChange={(v) => setLevel(v as Level)} className="grid sm:grid-cols-3 gap-3">
         {(Object.keys(LEVELS) as Level[]).map((k) => (
