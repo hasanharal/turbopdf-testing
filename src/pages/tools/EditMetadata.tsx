@@ -19,11 +19,17 @@ export default function EditMetadata() {
       try {
         const bytes = new Uint8Array(await files[0].arrayBuffer());
         const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        const rawKeywords = doc.getKeywords();
+        const keywords = Array.isArray(rawKeywords)
+          ? rawKeywords.join(", ")
+          : typeof rawKeywords === "string"
+          ? rawKeywords
+          : "";
         setMeta({
           title: doc.getTitle() || "",
           author: doc.getAuthor() || "",
           subject: doc.getSubject() || "",
-          keywords: (doc.getKeywords() || ""),
+          keywords,
         });
       } catch {}
     })();

@@ -108,8 +108,8 @@ export const tools: Tool[] = [
   {
     slug: "powerpoint-to-pdf",
     name: "PowerPoint to PDF",
-    tagline: "Convert PPT/PPTX into a PDF",
-    description: "Export PowerPoint presentations as PDF documents with slide layouts, fonts and content preserved.",
+    tagline: "Extract text from PPT/PPTX into a PDF",
+    description: "Extracts text content from PowerPoint presentation slides into a clean, structured PDF. Images and visual layouts are not preserved — for full fidelity, export to PDF directly from PowerPoint.",
     icon: Presentation,
     gradient: "from-orange-500 to-red-500",
     accept: ".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -123,8 +123,9 @@ export const tools: Tool[] = [
     description: "Use your phone or laptop camera to scan multi-page documents and export them as a single PDF.",
     icon: Camera,
     gradient: "from-blue-500 to-cyan-500",
-    accept: "image/jpeg,image/png",
-    multiple: false,
+    // This tool uses camera capture, not file upload; accept/multiple are unused.
+    accept: "image/*",
+    multiple: true,
     category: "Convert",
   },
   {

@@ -93,7 +93,7 @@ export default function ScanToPdf() {
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {!active ? (
-            <Button onClick={start} className="bg-hero-gradient"><Camera className="h-4 w-4 mr-2" /> Start camera</Button>
+            <Button onClick={async () => { try { await start(); } catch(e: any) { alert(e.message); } }} className="bg-hero-gradient"><Camera className="h-4 w-4 mr-2" /> Start camera</Button>
           ) : (
             <>
               <Button onClick={capture} className="bg-hero-gradient"><Camera className="h-4 w-4 mr-2" /> Capture page</Button>

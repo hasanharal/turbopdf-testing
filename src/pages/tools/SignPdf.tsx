@@ -18,10 +18,12 @@ export default function SignPdf() {
   const [signature, setSignature] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const [posX, setPosX] = useState(60); // % from left of page width (anchor = signature center)
+  const [posX, setPosX] = useState(60); // % from left
   const [posY, setPosY] = useState(85); // % from top
   const [sigW, setSigW] = useState(25); // % of page width
   const [preview, setPreview] = useState<string | null>(null);
+  const [pdfPageDims, setPdfPageDims] = useState({ w: 595, h: 842 }); // A4 in points
+  const previewWrapRef = useRef<HTMLDivElement>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -36,6 +38,9 @@ export default function SignPdf() {
       const target = Math.min(Math.max(1, page), pdf.numPages);
       const pg = await pdf.getPage(target);
       const vp = pg.getViewport({ scale: 1.1 });
+      // Store actual PDF page dimensions
+      const baseVp = pg.getViewport({ scale: 1 });
+      if (!cancelled) setPdfPageDims({ w: baseVp.width, h: baseVp.height });
       const c = document.createElement("canvas");
       c.width = vp.width; c.height = vp.height;
       const ctx = c.getContext("2d")!;
@@ -132,7 +137,7 @@ export default function SignPdf() {
       {preview && (
         <div className="rounded-2xl border border-border bg-secondary/40 p-4">
           <p className="text-sm font-medium mb-3">Live preview — page {page} of {pageCount}</p>
-          <div className="relative inline-block max-w-full mx-auto" style={{ maxHeight: 500 }}>
+          <div ref={previewWrapRef} className="relative inline-block max-w-full mx-auto" style={{ maxHeight: 500 }}>
             <img src={preview} alt="Page preview" className="block max-w-full max-h-[500px] rounded-md border border-border bg-white" />
             {signature && (
               <img

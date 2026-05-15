@@ -9,7 +9,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 const tool = getTool("pdf-to-word")!;
 
-// Build a minimal valid .docx (Word) file containing the extracted plain text.
+// Build a minimal valid .docx (Word) file containing the extracted plain text with formatting.
 const buildDocx = async (text: string): Promise<Uint8Array> => {
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
@@ -25,9 +25,14 @@ const buildDocx = async (text: string): Promise<Uint8Array> => {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>`);
+  // Add word/_rels/document.xml.rels for a valid .docx structure
+  zip.folder("word")!.folder("_rels")!.file("document.xml.rels",
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+</Relationships>`);
   const escape = (s: string) => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
   const paragraphs = text.split(/\n+/).map(line =>
-    `<w:p><w:r><w:t xml:space="preserve">${escape(line)}</w:t></w:r></w:p>`
+    `<w:p><w:pPr><w:spacing w:after="160"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${escape(line)}</w:t></w:r></w:p>`
   ).join("");
   zip.folder("word")!.file("document.xml",
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

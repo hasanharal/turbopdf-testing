@@ -8,6 +8,7 @@ import { Dropzone } from "@/components/Dropzone";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { AlertCircle } from "lucide-react";
 
 const tool = getTool("crop-pdf");
 
@@ -63,6 +64,13 @@ export default function CropPdf() {
   const customBody = (
     <div className="space-y-5">
       <Dropzone accept="application/pdf" files={files} onFiles={setFiles} />
+      <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-xs flex gap-2">
+        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <span>
+          Crop hides content using a PDF CropBox but does not permanently delete it.
+          To permanently remove content, use a dedicated redaction tool.
+        </span>
+      </div>
       {preview && (
         <div className="rounded-2xl border border-border bg-secondary/40 p-4">
           <p className="text-sm font-medium mb-3">Live crop preview (page 1)</p>

@@ -101,7 +101,7 @@ export const ToolPageLayout = ({ tool, process, options, helper, ctaLabel, hideD
 
               {customBody}
 
-              {options && files.length > 0 && state !== "success" && <div className="mt-6">{options(files)}</div>}
+              {options && (files.length > 0 || hideDefaultDropzone) && state !== "success" && <div className="mt-6">{options(files)}</div>}
               {helper && <div className="mt-5">{helper}</div>}
 
               {state === "processing" && (
