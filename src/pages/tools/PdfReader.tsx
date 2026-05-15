@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ZoomIn, ZoomOut, ChevronRight, ChevronLeft as Prev } from "lucide-react";
+import { ChevronLeft, ZoomIn, ZoomOut, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Dropzone } from "@/components/Dropzone";
@@ -68,8 +68,16 @@ export default function PdfReader() {
             <div className="rounded-2xl border border-border bg-card p-3 sm:p-5 shadow-soft">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => setPageNum((n) => Math.max(1, n - 1))} disabled={pageNum <= 1}><Prev className="h-4 w-4" /></Button>
-                  <span className="text-sm font-medium tabular-nums">{pageNum} / {pdf.numPages}</span>
+                  <Button variant="outline" size="icon" onClick={() => setPageNum((n) => Math.max(1, n - 1))} disabled={pageNum <= 1}><ChevronLeft className="h-4 w-4" /></Button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={pdf.numPages}
+                    value={pageNum}
+                    onChange={(e) => setPageNum(Math.max(1, Math.min(pdf.numPages, +e.target.value || 1)))}
+                    className="w-14 text-center border rounded px-2 py-1 text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">/ {pdf.numPages}</span>
                   <Button variant="outline" size="icon" onClick={() => setPageNum((n) => Math.min(pdf.numPages, n + 1))} disabled={pageNum >= pdf.numPages}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
                 <div className="flex items-center gap-2">

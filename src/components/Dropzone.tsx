@@ -22,8 +22,14 @@ export const Dropzone = ({ accept, multiple = false, files, onFiles, cta = "Drop
     [files, multiple, onFiles]
   );
 
-  const acceptObj = accept.split(",").reduce((acc, mime) => {
-    acc[mime.trim()] = [];
+  const acceptObj = accept.split(",").reduce((acc, token) => {
+    const t = token.trim();
+    if (t.startsWith(".")) {
+      // File extension — needs to be mapped to a generic MIME type key
+      acc["application/octet-stream"] = [...(acc["application/octet-stream"] || []), t];
+    } else {
+      acc[t] = [];
+    }
     return acc;
   }, {} as Record<string, string[]>);
 

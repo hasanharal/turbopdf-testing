@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { ToolPageLayout } from "@/components/ToolPageLayout";
 import { getTool } from "@/lib/tools";
-import { validatePdf } from "@/lib/file-utils";
+import { validatePdf, downloadBlob } from "@/lib/file-utils";
 import { pdfjsLib } from "@/lib/pdf-worker";
 import { Dropzone } from "@/components/Dropzone";
 import pixelmatch from "pixelmatch";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 const tool = getTool("compare-pdf");
 
@@ -35,7 +37,7 @@ export default function ComparePdf() {
 
     const data1 = new Uint8Array(await a[0].arrayBuffer());
     const data2 = new Uint8Array(await b[0].arrayBuffer());
-    const p1 = await pdfjsLib.getDocument({ data: data1 }).promise;
+const p1 = await pdfjsLib.getDocument({ data: data1 }).promise;
     const p2 = await pdfjsLib.getDocument({ data: data2 }).promise;
     const pages = Math.max(p1.numPages, p2.numPages);
     const out: DiffPage[] = [];
@@ -76,6 +78,19 @@ export default function ComparePdf() {
 
     return (
       <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">{out.length} page{out.length > 1 ? "s" : ""} compared</p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const report = out.map(r => `Page ${r.idx}: ${r.changed}% changed`).join("\n");
+              downloadBlob(new Blob([report], { type: "text/plain" }), "comparison-report.txt", "text/plain");
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" /> Download Summary
+          </Button>
+        </div>
         {out.map((r) => (
           <div key={r.idx} className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between mb-3">

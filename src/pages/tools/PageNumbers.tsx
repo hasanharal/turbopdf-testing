@@ -24,7 +24,8 @@ export default function PageNumbers() {
 
     doc.getPages().forEach((page, i) => {
       const n = i + start;
-      const text = format === "n-only" ? `${n}` : format === "page-n" ? `Page ${n}` : `${n} / ${total}`;
+      const displayTotal = total + start - 1;
+      const text = format === "n-only" ? `${n}` : format === "page-n" ? `Page ${n}` : `${n} / ${displayTotal}`;
       const size = 11;
       const { width, height } = page.getSize();
       const tw = font.widthOfTextAtSize(text, size);

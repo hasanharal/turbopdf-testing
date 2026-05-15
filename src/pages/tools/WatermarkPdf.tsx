@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ToolPageLayout } from "@/components/ToolPageLayout";
 import { getTool } from "@/lib/tools";
 import { downloadBlob, validatePdf } from "@/lib/file-utils";
@@ -19,7 +19,8 @@ export default function WatermarkPdf() {
   const [position, setPosition] = useState("center");
   const [size, setSize] = useState(60);
   const [preview, setPreview] = useState<string | null>(null);
-  const [pageDims, setPageDims] = useState({ w: 0, h: 0 });
+  const [pageDims, setPageDims] = useState({ w: 595, h: 842 }); // A4 in points
+  const previewImgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,16 +72,18 @@ export default function WatermarkPdf() {
     downloadBlob(data, file.name.replace(/\.pdf$/i, "") + "-watermarked.pdf");
   };
 
-  // Preview overlay: derive scaled position
+  // Preview overlay: derive scaled position with accurate sizing
   const previewOverlay = () => {
     if (!preview) return null;
-    // Approximate font scale for visual preview
-    const scale = 0.95;
+    // Calculate the scaling factor between preview image and actual PDF
+    const previewImgW = previewImgRef.current?.offsetWidth || pageDims.w;
+    const pxPerPt = previewImgW / pageDims.w;
+    const scaledFontSize = size * pxPerPt;
     let style: React.CSSProperties = {
       position: "absolute",
       color: "rgba(80, 80, 80, 1)",
       opacity: opacity / 100,
-      fontSize: `${size * scale}px`,
+      fontSize: `${scaledFontSize}px`,
       fontFamily: "Arial Black, Helvetica, sans-serif",
       fontWeight: 800,
       whiteSpace: "nowrap",
@@ -106,7 +109,7 @@ export default function WatermarkPdf() {
         <div className="rounded-2xl border border-border bg-secondary/40 p-4">
           <p className="text-sm font-medium mb-3">Live preview (page 1)</p>
           <div className="relative inline-block max-w-full mx-auto" style={{ maxHeight: 500 }}>
-            <img src={preview} alt="Preview" className="block max-w-full max-h-[500px] rounded-md border border-border bg-white" />
+            <img ref={previewImgRef} src={preview} alt="Preview" className="block max-w-full max-h-[500px] rounded-md border border-border bg-white" />
             <div className="absolute inset-0 overflow-hidden rounded-md">{previewOverlay()}</div>
           </div>
         </div>
