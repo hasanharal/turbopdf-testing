@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ToolPageLayout } from "@/components/ToolPageLayout";
 import { getTool } from "@/lib/tools";
 import { downloadBlob, validatePdf } from "@/lib/file-utils";
 import { PDFDocument } from "pdf-lib";
 import { pdfjsLib } from "@/lib/pdf-worker";
+import { Dropzone } from "@/components/Dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Info } from "lucide-react";
@@ -37,20 +38,37 @@ export default function UnlockPdf() {
     return () => { cancelled = true; };
   }, [files]);
 
-  const process = async (files: File[]) => {
-    const file = files[0];
+  const process = async (filesFromCtx: File[]) => {
+    // We use the local files state (since hideDefaultDropzone is true)
+    const file = files[0] || filesFromCtx[0];
     if (!file) throw new Error("Please upload a PDF.");
     await validatePdf(file);
     const bytes = new Uint8Array(await file.arrayBuffer());
+
+    // Step 1: Verify the password using pdfjs (which actually supports password-based decryption).
+    try {
+      await pdfjsLib.getDocument({
+        data: bytes.slice(),
+        password: password || undefined,
+      }).promise;
+    } catch (e: any) {
+      const name = e?.name || "";
+      if (name === "PasswordException") {
+        throw new Error(password
+          ? "Incorrect password. Please double-check and try again."
+          : "This PDF is password-protected. Enter the password and try again.");
+      }
+      throw new Error("Could not open this PDF. It may be corrupted or use unsupported encryption.");
+    }
+
+    // Step 2: Re-save with pdf-lib (no encryption). pdf-lib's ignoreEncryption bypasses
+    // the encryption check but only works for password-less or already-decrypted streams.
     let doc: PDFDocument;
     try {
       doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-    } catch (e: any) {
-      throw new Error("Could not open this PDF. If it uses strong encryption, try entering the password.");
+    } catch {
+      throw new Error("This PDF uses encryption that can't be removed in the browser. Try a desktop tool like Adobe Acrobat.");
     }
-    
-    // If the PDF is encrypted, we need to copy pages to create an unencrypted copy
-    // using pdf-lib's native page copying (preserves text layer)
     try {
       const out = await PDFDocument.create();
       const pages = await out.copyPages(doc, doc.getPageIndices());
@@ -76,12 +94,17 @@ export default function UnlockPdf() {
     </div>
   );
 
-  const customBody = preview ? (
-    <div className="rounded-2xl border border-border bg-secondary/40 p-4">
-      <p className="text-sm font-medium mb-3">Preview (page 1)</p>
-      <img src={preview} alt="Page preview" className="max-w-full max-h-[400px] rounded-md border border-border" />
+  const customBody = (
+    <div className="space-y-5">
+      <Dropzone accept="application/pdf" files={files} onFiles={setFiles} />
+      {preview && (
+        <div className="rounded-2xl border border-border bg-secondary/40 p-4">
+          <p className="text-sm font-medium mb-3">Preview (page 1)</p>
+          <img src={preview} alt="Page preview" className="max-w-full max-h-[400px] rounded-md border border-border" />
+        </div>
+      )}
     </div>
-  ) : null;
+  );
 
   return <ToolPageLayout tool={tool} process={process} options={options} helper={helper} customBody={customBody} hideDefaultDropzone />;
 }

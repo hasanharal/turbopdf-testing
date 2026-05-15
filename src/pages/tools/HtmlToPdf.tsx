@@ -40,15 +40,15 @@ export default function HtmlToPdf() {
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
       const imgH = (canvas.height * imgW) / canvas.width;
-      let remaining = imgH;
-      let y = 0;
       const img = canvas.toDataURL("image/jpeg", 0.92);
-      // Slice into pages
-      while (remaining > 0) {
-        pdf.addImage(img, "JPEG", 0, y === 0 ? 0 : -y, imgW, imgH);
-        remaining -= pageH;
-        y += pageH;
-        if (remaining > 0) pdf.addPage();
+      // Correct multi-page slicing: shift the image up by one page-height per page.
+      const totalPages = Math.max(1, Math.ceil(imgH / pageH));
+      for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+        if (pageIdx > 0) pdf.addPage();
+        pdf.addImage(img, "JPEG", 0, -(pageIdx * pageH), imgW, imgH);
+      }
+      if (canvas.height > 16000) {
+        console.warn("[HtmlToPdf] Document is very long; some content may render imperfectly.");
       }
       return pdf.output("blob");
     } finally {

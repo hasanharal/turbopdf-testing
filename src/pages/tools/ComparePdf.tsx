@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ToolPageLayout } from "@/components/ToolPageLayout";
+import { ToolPageLayout, type ProcessCtx } from "@/components/ToolPageLayout";
 import { getTool } from "@/lib/tools";
 import { validatePdf, downloadBlob } from "@/lib/file-utils";
 import { pdfjsLib } from "@/lib/pdf-worker";
@@ -15,7 +15,6 @@ type DiffPage = { idx: number; left: string; right: string; diff: string; change
 export default function ComparePdf() {
   const [a, setA] = useState<File[]>([]);
   const [b, setB] = useState<File[]>([]);
-  const [results, setResults] = useState<DiffPage[]>([]);
 
   const renderPage = async (file: File, n: number, scale = 1.2) => {
     const data = new Uint8Array(await file.arrayBuffer());
@@ -31,18 +30,21 @@ export default function ComparePdf() {
     return { canvas: c, ctx, total };
   };
 
-  const process = async () => {
+  const process = async (_files: File[], { setProgress, setStatus }: ProcessCtx) => {
     if (!a[0] || !b[0]) throw new Error("Please upload two PDFs to compare.");
+    setStatus("Validating PDFs…");
     await validatePdf(a[0]); await validatePdf(b[0]);
 
+    setStatus("Reading documents…");
     const data1 = new Uint8Array(await a[0].arrayBuffer());
     const data2 = new Uint8Array(await b[0].arrayBuffer());
-const p1 = await pdfjsLib.getDocument({ data: data1 }).promise;
+    const p1 = await pdfjsLib.getDocument({ data: data1 }).promise;
     const p2 = await pdfjsLib.getDocument({ data: data2 }).promise;
     const pages = Math.max(p1.numPages, p2.numPages);
     const out: DiffPage[] = [];
 
     for (let i = 1; i <= pages; i++) {
+      setStatus(`Comparing page ${i} of ${pages}…`);
       const left = i <= p1.numPages ? await renderPage(a[0], i) : null;
       const right = i <= p2.numPages ? await renderPage(b[0], i) : null;
       const w = Math.max(left?.canvas.width || 0, right?.canvas.width || 0);
@@ -73,8 +75,12 @@ const p1 = await pdfjsLib.getDocument({ data: data1 }).promise;
         diff: diffC.toDataURL("image/png"),
         changed: Math.round((changed / (w * h)) * 1000) / 10,
       });
+      // Free GPU memory
+      L.c.width = 0; L.c.height = 0;
+      R.c.width = 0; R.c.height = 0;
+      diffC.width = 0; diffC.height = 0;
+      setProgress((i / pages) * 100);
     }
-    setResults(out);
 
     return (
       <div className="space-y-6">

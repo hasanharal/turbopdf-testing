@@ -46,7 +46,7 @@ export default function CropPdf() {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const doc = await PDFDocument.load(bytes);
     const pages = doc.getPages();
-    for (const p of pages) {
+    const applyCrop = (p: typeof pages[number]) => {
       const { width, height } = p.getSize();
       const lx = (crop.left / 100) * width;
       const rx = (crop.right / 100) * width;
@@ -57,6 +57,11 @@ export default function CropPdf() {
       const w = width - lx - rx;
       const h = height - ty - by;
       if (w > 10 && h > 10) p.setCropBox(x, y, w, h);
+    };
+    if (allPages) {
+      pages.forEach(applyCrop);
+    } else if (pages[0]) {
+      applyCrop(pages[0]);
     }
     downloadBlob(await doc.save(), file.name.replace(/\.pdf$/i, "") + "-cropped.pdf");
   };
